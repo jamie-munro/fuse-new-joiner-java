@@ -83,7 +83,7 @@ public class IexRestControllerTest extends ASpringTest {
   }
 
   @Test
-  public void testGetHistoricalPrice() throws Exception {
+  public void testGetHistoricalPriceDate() throws Exception {
 
     MvcResult result = this.mvc.perform(
                     org.springframework.test.web.servlet.request.MockMvcRequestBuilders
@@ -97,26 +97,79 @@ public class IexRestControllerTest extends ASpringTest {
   }
 
   @Test
-  public void testGetHistoricalPriceEmptySymbol() throws Exception {
-
+  public void testGetHistoricalPriceDateEmptySymbol() throws Exception {
     MvcResult result1 = this.mvc.perform(
                     org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                             .get("/iex/historicalPrice?symbol=&date=20181214")
                             .accept(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(status().isOk())
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", is(Collections.emptyList())))
             .andReturn();
   }
 
   @Test
-  public void testGetHistoricalPriceEmptyDate() throws Exception {
-
+  public void testGetHistoricalPriceDateEmptyDate() throws Exception {
     MvcResult result1 = this.mvc.perform(
                     org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                             .get("/iex/historicalPrice?symbol=AAPL&date=")
                             .accept(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(status().isOk())
+            .andExpect(jsonPath("$", is(Collections.emptyList())))
+            .andReturn();
+  }
+
+  @Test
+  public void testGetHistoricalPriceDateInvalidDate() throws Exception {
+    MvcResult result1 = this.mvc.perform(
+                    org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                            .get("/iex/historicalPrice?symbol=AAPL&date=20981011")
+                            .accept(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", is(Collections.emptyList())))
+            .andReturn();
+  }
+
+  @Test
+  public void testGetHistoricalPriceRange() throws Exception {
+    MvcResult result = this.mvc.perform(
+                    org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                            .get("/iex/historicalPrice?symbol=AAPL&range=ytd")
+                            .accept(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].symbol", is("AAPL")))
+            .andExpect(jsonPath("$[0].open").value(new BigDecimal("42.25")))
+            .andExpect(jsonPath("$[0].close").value(new BigDecimal("41.37")))
+            .andReturn();
+  }
+
+  @Test
+  public void testGetHistoricalPriceRangeEmptySymbol() throws Exception {
+    MvcResult result = this.mvc.perform(
+                    org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                            .get("/iex/historicalPrice?symbol=&range=ytd")
+                            .accept(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", is(Collections.emptyList())))
+            .andReturn();
+  }
+
+  @Test
+  public void testGetHistoricalPriceRangeEmptyRange() throws Exception {
+    MvcResult result = this.mvc.perform(
+                    org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                            .get("/iex/historicalPrice?symbol=AAPL&range=")
+                            .accept(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", is(Collections.emptyList())))
+            .andReturn();
+  }
+
+  @Test
+  public void testGetHistoricalPriceRangeInvalidRange() throws Exception {
+    MvcResult result = this.mvc.perform(
+                    org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                            .get("/iex/historicalPrice?symbol=AAPL&range=zzzzzz")
+                            .accept(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", is(Collections.emptyList())))
             .andReturn();

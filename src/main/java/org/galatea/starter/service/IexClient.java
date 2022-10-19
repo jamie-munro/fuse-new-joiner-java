@@ -1,11 +1,15 @@
 package org.galatea.starter.service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import feign.Param;
 import org.galatea.starter.domain.IexHistoricalPrice;
 import org.galatea.starter.domain.IexLastTradedPrice;
 import org.galatea.starter.domain.IexSymbol;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -39,9 +43,30 @@ public interface IexClient {
    * Get historical pricing data for the given symbol on the given date. See https://iexcloud.io/docs/api/#historical-prices
    *
    * @param symbol the symbol to retrieve data about
-   * @param date the date which should be queried
+   * @param date the date which should be queried (in "yyyyMMdd" String format)
    * @return historical pricing data for the given symbol on the given date
    */
   @GetMapping("/stock/{symbol}/chart/date/{date}?chartByDay=true&token=${spring.rest.iexToken}")
-  List<IexHistoricalPrice> getHistoricalPrice(@PathVariable(value="symbol") String symbol, @PathVariable(value="date") String date);
+  List<IexHistoricalPrice> getHistoricalPriceOnDate(@PathVariable(value="symbol") String symbol, @PathVariable(value="date") String date);
+
+  /**
+   * Helper method to convert LocalDate format dates in the string format required by IEX
+   *
+   * @param symbol the symbol to retrieve data about
+   * @param date the date which should be queried (in LocalDate format)
+   * @return historical pricing data for the given symbol on the given date
+   */
+  default List<IexHistoricalPrice> getHistoricalPriceOnDate(String symbol, LocalDate date) {
+    return getHistoricalPriceOnDate(symbol, date.format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+  }
+
+  /**
+   * Get historical pricing data for the given symbol and range. See https://iexcloud.io/docs/api/#historical-prices
+   *
+   * @param symbol the symbol to retrieve data about
+   * @param range the range to query (max, 5y, 2y, 1y, ytd, 6m, 3m, 1m, 1mm, 5d, 5dm, date, dynamic)
+   * @return historical pricing data for the given symbol on the given date
+   */
+  @GetMapping("/stock/{symbol}/chart/{range}?token=${spring.rest.iexToken}")
+  List<IexHistoricalPrice> getHistoricalPriceForRange(@PathVariable(value="symbol") String symbol, @PathVariable(value="range") String range);
 }

@@ -1,6 +1,6 @@
 package org.galatea.starter.domain;
 
-import java.util.Date;
+import java.time.LocalDate;
 import lombok.Builder;
 import lombok.Data;
 
@@ -10,7 +10,7 @@ public class IexSymbol {
 
   private String symbol;
   private String name;
-  private Date date;
+  private LocalDate date;
   private boolean isEnabled;
   private String type;
   private String iexId;
