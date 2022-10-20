@@ -2,14 +2,14 @@ package org.galatea.starter.entrypoint;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.aspect4log.Log;
 import net.sf.aspect4log.Log.Level;
+import org.galatea.starter.domain.HistoricalPricesCache;
 import org.galatea.starter.domain.IexHistoricalPrice;
 import org.galatea.starter.domain.IexLastTradedPrice;
 import org.galatea.starter.domain.IexSymbol;
@@ -24,6 +24,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
 @Slf4j
 @Log(enterLevel = Level.INFO, exitLevel = Level.INFO)
 @Validated
@@ -36,6 +39,29 @@ public class IexRestController {
 
   @Value("${spring.rest.iexValidRanges}")
   private List<String> iexValidRanges;
+
+  @Value("${spring.rest.historicalPricesCachePath}")
+  private String cacheFilePath;
+
+  private HistoricalPricesCache cache;
+
+  /**
+   * Called on startup
+   * Initialises historical prices cache
+   */
+  @PostConstruct
+  public void initialise() {
+    cache = new HistoricalPricesCache(cacheFilePath);
+  }
+
+  /**
+   * Called as the application shuts down
+   * Saves historical prices cache back to disk
+   */
+  @PreDestroy
+  public void destroy() {
+    cache.save();
+  }
 
   /**
    * Exposes an endpoint to get all the symbols available on IEX.
@@ -80,7 +106,19 @@ public class IexRestController {
     //date mode
     else if ((date != null) && (range == null)) {
       if (checkValidDate(date)) {
-        return iexService.getHistoricalPriceOnDate(symbol, date);
+        List<IexHistoricalPrice> cachedResult = cache.checkDatedCache(symbol, date);
+
+        if (cachedResult != null) {
+          return cachedResult;
+        }
+        else {
+          List<IexHistoricalPrice> apiResult = iexService.getHistoricalPriceOnDate(symbol, date);
+
+          //cache result
+          cache.cacheDated(symbol, date, apiResult);
+
+          return apiResult;
+        }
       }
       else {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid date specified");
@@ -89,7 +127,19 @@ public class IexRestController {
     //range mode
     else if ((date == null) && (range != null)) {
       if (checkValidRange(range)) {
-        return iexService.getHistoricalPriceForRange(symbol, range);
+        List<IexHistoricalPrice> cachedResult = cache.checkRangedCache(symbol, range);
+
+        if (cachedResult != null) {
+          return cachedResult;
+        }
+        else {
+          List<IexHistoricalPrice> apiResult = iexService.getHistoricalPriceForRange(symbol, range);
+
+          //cache result
+          cache.cacheRanged(symbol, range, apiResult);
+
+          return apiResult;
+        }
       }
       else {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid range specified");

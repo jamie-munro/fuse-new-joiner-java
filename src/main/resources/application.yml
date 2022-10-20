@@ -50,7 +50,7 @@ spring:
       iexBasePath: http://localhost:${wiremock.server.port}/
       iexToken: DUMMY_TOKEN
       iexValidRanges: max,5y,2y,1y,ytd,6m,3m,1m,1mm,5d,5dm,date,dynamic
-
+      historicalPricesCachePath: C:\Users\jamie\FUSE_historical_prices_cache
 ---
 # Dev properties go here
 spring:
@@ -62,6 +62,7 @@ spring:
       iexBasePath: https://cloud.iexapis.com/stable
       iexToken: YOUR_TOKEN_HERE
       iexValidRanges: max,5y,2y,1y,ytd,6m,3m,1m,1mm,5d,5dm,date,dynamic
+      historicalPricesCachePath: C:\Users\jamie\FUSE_historical_prices_cache
 # set debug to get spring to log the classpath (and other things) on startup
 debug: true
 
