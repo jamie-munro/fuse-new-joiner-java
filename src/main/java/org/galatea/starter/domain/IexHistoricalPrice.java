@@ -4,14 +4,14 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.Instant;
 
 @Data
 @Builder
 public class IexHistoricalPrice {
 
   private String symbol;
-  private Date date;
+  private Instant date;
   private BigDecimal open;
   private BigDecimal close;
   private BigDecimal high;

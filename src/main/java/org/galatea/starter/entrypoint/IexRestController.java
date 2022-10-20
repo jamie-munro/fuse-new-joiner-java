@@ -16,11 +16,13 @@ import org.galatea.starter.domain.IexSymbol;
 import org.galatea.starter.service.IexService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Log(enterLevel = Level.INFO, exitLevel = Level.INFO)
@@ -61,41 +63,41 @@ public class IexRestController {
   /**
    * Get historical pricing data for the given symbol on the given date
    *
-   * @param symbols the symbol to retrieve data about
-   * @param dates   the date which should be queried
+   * @param symbol the symbol to retrieve data about
+   * @param date   the date which should be queried
    * @return historical pricing data for the given symbol on the given date
    */
   @GetMapping(value = "${mvc.iex.getHistoricalPricePath}", produces = {
           MediaType.APPLICATION_JSON_VALUE})
   public List<IexHistoricalPrice> getHistoricalPrice(
-          @RequestParam(value = "symbol", required = true) final List<String> symbols,
-          @RequestParam(value = "range", required = false) final List<String> ranges,
-          @RequestParam(value = "date", required = false) @DateTimeFormat(pattern = "yyyyMMdd") final List<LocalDate> dates) {
+          @RequestParam(value = "symbol", required = true) final String symbol,
+          @RequestParam(value = "range", required = false) final String range,
+          @RequestParam(value = "date", required = false) @DateTimeFormat(pattern = "yyyyMMdd") final LocalDate date) {
+    //handle empty symbol in line with existing empty symbol behaviour
+    if (symbol.equals("")) {
+      return Collections.emptyList();
+    }
     //date mode
-    if ((symbols.size() == 1) && (dates != null) && (dates.size() == 1) && (ranges == null)) {
-      LocalDate date = dates.get(0);
-
+    else if ((date != null) && (range == null)) {
       if (checkValidDate(date)) {
-        return iexService.getHistoricalPriceOnDate(symbols.get(0), dates.get(0));
+        return iexService.getHistoricalPriceOnDate(symbol, date);
       }
       else {
-        return Collections.emptyList();
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid date specified");
       }
     }
     //range mode
-    else if ((symbols.size() == 1) && (dates == null) && (ranges != null) && (ranges.size() == 1)) {
-      String range = ranges.get(0);
-
+    else if ((date == null) && (range != null)) {
       if (checkValidRange(range)) {
-        return iexService.getHistoricalPriceForRange(symbols.get(0), ranges.get(0));
+        return iexService.getHistoricalPriceForRange(symbol, range);
       }
       else {
-        return Collections.emptyList();
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid range specified");
       }
     }
-    //invalid
+    //values for both date and range
     else {
-      return Collections.emptyList();
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Both date and range specified, only one can be set at a time");
     }
   }
 
